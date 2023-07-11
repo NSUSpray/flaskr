@@ -20,6 +20,7 @@
         {% endif %}
       </header>
       <p class="body">{{ post['body']|truncate(80, False, '…') }}</p>
+      <div>{{ reactions_block(reactions[loop.index - 1]) }}</div>
     </article>
     {% if not loop.last %}
       <hr>

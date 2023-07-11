@@ -1,3 +1,7 @@
+{% macro reactions_block(ids) %}
+  {% set reacted = g.user and g.user['id'] in ids %}
+  {{ ('💙 ' if reacted else '🤍 ') + ids|length|string }}
+{% endmacro %}
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
