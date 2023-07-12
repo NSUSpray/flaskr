@@ -61,6 +61,20 @@ def test_create(client, auth, app):
         assert count == 2
 
 
+def test_read(client, auth):
+    response = client.get('/1')
+    assert b'test title' in response.data
+    assert b'by test on 2018-01-01' in response.data
+    assert b'test\nbody' in response.data
+    assert '🤍 1' in response.data.decode('utf-8')
+
+    auth.login()
+    response = client.get('/1')
+    assert b'href="/1/update"' in response.data
+    assert b'action="/1/like"' in response.data
+    assert '💙 1' in response.data.decode('utf-8')
+
+
 def test_update(client, auth, app):
     auth.login()
     assert client.get('/1/update').status_code == 200
