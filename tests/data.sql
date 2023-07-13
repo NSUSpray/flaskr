@@ -8,3 +8,7 @@ VALUES
   ('test title', 'test' || x'0a' || 'body', 1, '2018-01-01 00:00:00');
 
 INSERT INTO reaction (post_id, user_id) VALUES (1, 1);
+
+INSERT INTO comment (body, post_id, author_id, created)
+VALUES
+  ('test' || x'0a' || 'body', 1, 1, '2018-01-01 00:00:00');

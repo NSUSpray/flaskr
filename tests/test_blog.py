@@ -6,7 +6,8 @@ def test_index(client, auth):
     response = client.get('/')
     assert b'Log In' in response.data
     assert b'Register' in response.data
-    assert '🤍 1' in response.data.decode('utf-8')
+    assert '🤍&nbsp;1' in response.data.decode('utf-8')
+    assert '💬&nbsp;1' in response.data.decode('utf-8')
 
     auth.login()
     response = client.get('/')
@@ -15,7 +16,7 @@ def test_index(client, auth):
     assert b'by test on 2018-01-01' in response.data
     assert b'test\nbody' in response.data
     assert b'href="/1/update"' in response.data
-    assert '💙 1' in response.data.decode('utf-8')
+    assert '💙&nbsp;1' in response.data.decode('utf-8')
 
 
 @pytest.mark.parametrize('path', (
@@ -34,6 +35,7 @@ def test_author_required(app, client, auth):
     with app.app_context():
         db = get_db()
         db.execute('UPDATE post SET author_id = 2 WHERE id = 1')
+        db.execute('UPDATE comment SET author_id = 2 WHERE id = 1')
         db.commit()
 
     auth.login()
@@ -42,12 +44,15 @@ def test_author_required(app, client, auth):
     assert client.post('/1/delete').status_code == 403
     # current user doesn't see edit link
     assert b'href="/1/update"' not in client.get('/').data
+    # current user can't delete other user's comment
+    assert client.post('/delete_comment/1').status_code == 403
 
 
 @pytest.mark.parametrize('path', (
     '/2/update',
     '/2/delete',
     '/2/like',
+    '/delete_comment/2',
 ))
 def test_exists_required(client, auth, path):
     auth.login()
@@ -70,13 +75,14 @@ def test_read(client, auth):
     assert b'test title' in response.data
     assert b'by test on 2018-01-01' in response.data
     assert b'test\nbody' in response.data
-    assert '🤍 1' in response.data.decode('utf-8')
+    assert '🤍&nbsp;1' in response.data.decode('utf-8')
+    assert b'1 comments' in response.data
 
     auth.login()
     response = client.get('/1')
     assert b'href="/1/update"' in response.data
     assert b'action="/1/like"' in response.data
-    assert '💙 1' in response.data.decode('utf-8')
+    assert '💙&nbsp;1' in response.data.decode('utf-8')
 
 
 def test_update(client, auth, app):
@@ -98,6 +104,12 @@ def test_create_update_validate(client, auth, path):
     auth.login()
     response = client.post(path, data={'title': '', 'body': ''})
     assert b'Title is required.' in response.data
+
+
+def test_comment_validate(client, auth):
+    auth.login()
+    response = client.post('/1/comment', data={'body': ''})
+    assert b'Message is required.' in response.data
 
 
 def test_delete(client, auth, app):
@@ -124,14 +136,28 @@ def test_like(client, auth, app):
 
     auth.login()
 
-    response = client.post('/1/like')
-    assert response.headers['Location'] == '/1'
-    assert get_count() == 0
-    response = client.get('/1')
-    assert '🤍 0' in response.data.decode('utf-8')
+    for i in range(2):
+        response = client.post('/1/like')
+        assert response.headers['Location'] == '/1'
+        assert get_count() == i
 
-    response = client.post('/1/like')
+
+def test_comment(client, auth, app):
+    auth.login()
+    client.post('/1/comment', data={'body': 'hello'})
+
+    with app.app_context():
+        db = get_db()
+        count = db.execute('SELECT COUNT(id) FROM comment').fetchone()[0]
+        assert count == 2
+
+
+def test_delete_comment(client, auth, app):
+    auth.login()
+    response = client.post('/delete_comment/1')
     assert response.headers['Location'] == '/1'
-    assert get_count() == 1
-    response = client.get('/1')
-    assert '💙 1' in response.data.decode('utf-8')
+
+    with app.app_context():
+        db = get_db()
+        comment = db.execute('SELECT * FROM comment WHERE id = 1').fetchone()
+        assert comment is None

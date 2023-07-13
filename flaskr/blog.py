@@ -186,6 +186,7 @@ def comment(id):
 
     if error is not None:
         flash(error)
+        return read(id)
     else:
         db = get_db()
         db.execute('''
@@ -194,8 +195,7 @@ def comment(id):
             (body, g.user['id'], id)
         )
         db.commit()
-
-    return redirect(url_for('blog.read', id=id))
+        return redirect(url_for('blog.read', id=id))
 
 
 @bp.route('/delete_comment/<int:id>', methods=('POST',))
