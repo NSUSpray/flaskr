@@ -1,6 +1,9 @@
 {% macro reactions_block(ids) %}
   {% set reacted = g.user and g.user['id'] in ids %}
-  {{ ('💙 ' if reacted else '🤍 ') + ids|length|string }}
+  {{ ('💙' if reacted else '🤍') + '&nbsp;' + ids|length|string }}
+{% endmacro %}
+{% macro comments_block(ids) %}
+  {{ '💬&nbsp;' + ids|length|string }}
 {% endmacro %}
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>

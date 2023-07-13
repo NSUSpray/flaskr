@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-  <article class="post">
+  <section class="post">
     <header>
       <div>
         <h1>{{ post['title'] }}</h1>
@@ -23,5 +23,30 @@
     {% else %}
       <div>{{ reactions_block(reactions) }}</div>
     {% endif %}
-  </article>
+    <section class="comments">
+    {% if g.user %}
+      <form action="{{ url_for('blog.comment', id=post['id']) }}" method="post">
+        <textarea name="body" id="body">{{ request.form['body'] }}</textarea>
+        <input type="submit" value="Leave Comment">
+      </form>
+    {% endif %}
+    <h1>{{ comments|length }} comments</h1>
+    {% for comment in comments %}
+      <article>
+      <div>
+      <p>{{ comment['body'] }}</p>
+      <div class="about">by {{ comment['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
+      </div>
+      {% if g.user['id'] == comment['author_id'] %}
+        <form action="{{ url_for('blog.delete_comment', id=comment['id']) }}" method="post">
+          <input class="danger" type="submit" value="×" onclick="return confirm('Are you sure?');" />
+        </form>
+      {% endif %}
+      </article>
+      {% if not loop.last %}
+        <hr>
+      {% endif %}
+    {% endfor %}
+    </section>
+  </section>
 {% endblock %}
