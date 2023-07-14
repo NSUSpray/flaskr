@@ -15,6 +15,7 @@ CREATE TABLE post (
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
+  tags TEXT NOT NULL,
   FOREIGN KEY (author_id) REFERENCES user (id)
 );
 

@@ -6,22 +6,31 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required
 from flaskr.db import get_db
 
+
 bp = Blueprint('blog', __name__)
 
+
 @bp.route('/')
-def index():
+@bp.route('/tag/<tag>')
+def index(tag=None):
     db = get_db()
     posts = db.execute('''
         SELECT p.id, title, body, created, author_id, username
         FROM post p JOIN user u ON p.author_id = u.id
-        ORDER BY created DESC
-    ''').fetchall()
+        WHERE " " || tags || " " LIKE ?
+        ORDER BY created DESC''',
+        (f'% {tag} %' if tag else '%',)
+    ).fetchall()
     reactions = [get_reactions(post['id']) for post in posts]
     comments = [get_comments(post['id']) for post in posts]
     return render_template(
         'blog/index.html.jinja',
-        posts=posts, reactions=reactions, comments=comments
+        posts=posts, reactions=reactions, comments=comments, tag=tag
     )
+
+
+def make_tag_list(tags_string):
+    return [tag for tag in tags_string.split(' ') if tag]
 
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -30,6 +39,7 @@ def create():
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
+        tags = make_tag_list(request.form['tags'])
         error = None
 
         if not title:
@@ -40,19 +50,20 @@ def create():
         else:
             db = get_db()
             db.execute('''
-                INSERT INTO post (title, body, author_id)
-                VALUES (?, ?, ?)''',
-                (title, body, g.user['id'])
+                INSERT INTO post (title, body, author_id, tags)
+                VALUES (?, ?, ?, ?)''',
+                (title, body, g.user['id'], ' '.join(tags))
             )
             db.commit()
-            return redirect(url_for('blog.index'))
+            id = db.execute('SELECT LAST_INSERT_ROWID() id').fetchone()['id']
+            return redirect(url_for('blog.read', id=str(id)))
 
     return render_template('blog/create.html.jinja')
 
 
 def get_post(id, check_author=True):
     post = get_db().execute('''
-        SELECT p.id, title, body, created, author_id, username
+        SELECT p.id, title, body, created, author_id, username, tags
         FROM post p JOIN user u ON p.author_id = u.id
         WHERE p.id = ?''',
         (id,)
@@ -68,10 +79,8 @@ def get_post(id, check_author=True):
 
 
 def get_reactions(post_id):
-    reactions = get_db().execute('''
-        SELECT user_id
-        FROM reaction r
-        WHERE post_id = ?''',
+    reactions = get_db().execute(
+        'SELECT user_id FROM reaction WHERE post_id = ?',
         (post_id,)
     ).fetchall()
     return [reaction['user_id'] for reaction in reactions]
@@ -108,11 +117,12 @@ def get_comment(id, check_author=True):
 @bp.route('/<int:id>')
 def read(id):
     post = get_post(id, check_author=False)
-    reactions = get_reactions(post['id'])
-    comments = get_comments(post['id'])
+    reactions = get_reactions(id)
+    comments = get_comments(id)
+    tags = make_tag_list(post['tags'])
     return render_template(
         'blog/read.html.jinja',
-        post=post, reactions=reactions, comments=comments
+        post=post, reactions=reactions, comments=comments, tags=tags
     )
 
 
@@ -124,6 +134,7 @@ def update(id):
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
+        tags = make_tag_list(request.form['tags'])
         error = None
 
         if not title:
@@ -134,12 +145,12 @@ def update(id):
         else:
             db = get_db()
             db.execute('''
-                UPDATE post SET title = ?, body = ?
+                UPDATE post SET title = ?, body = ?, tags = ?
                 WHERE id = ?''',
-                (title, body, id)
+                (title, body, ' '.join(tags), id)
             )
             db.commit()
-            return redirect(url_for('blog.index'))
+            return redirect(url_for('blog.read', id=id))
 
     return render_template('blog/update.html.jinja', post=post)
 

@@ -16,13 +16,16 @@
       {% endif %}
     </header>
     <p class="body">{{ post['body'] }}</p>
+    <div class="details">
     {% if g.user %}
       <form class="reactions" action="{{ url_for('blog.like', id=post['id']) }}" method="post">
         <input type="submit" value="{{ reactions_block(reactions)|trim }}" />
       </form>
     {% else %}
-      <div>{{ reactions_block(reactions) }}</div>
+      <div class="reactions">{{ reactions_block(reactions) }}</div>
     {% endif %}
+    <div class="tags">{{ tags_block(tags) }}</div>
+    </div>
     <section class="comments">
     {% if g.user %}
       <form action="{{ url_for('blog.comment', id=post['id']) }}" method="post">

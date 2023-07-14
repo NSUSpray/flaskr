@@ -5,6 +5,11 @@
 {% macro comments_block(ids) %}
   {{ '💬&nbsp;' + ids|length|string }}
 {% endmacro %}
+{% macro tags_block(tags) %}
+  {% for tag in tags %}
+    <a href="{{ url_for('blog.index', tag=tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+  {% endfor %}
+{% endmacro %}
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
