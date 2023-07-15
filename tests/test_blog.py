@@ -19,6 +19,13 @@ def test_index(client, auth):
     assert '💙&nbsp;1' in response.data.decode('utf-8')
 
 
+def test_show_tagged(client):
+    response = client.get('/tag/test_tag')
+    assert 'with tag “test_tag”' in response.data.decode('utf-8')
+    assert b'test title 1' in response.data
+    assert b'test title 2' not in response.data
+
+
 @pytest.mark.parametrize('path', (
     '/create',
     '/1/update',
@@ -49,9 +56,9 @@ def test_author_required(app, client, auth):
 
 
 @pytest.mark.parametrize('path', (
-    '/2/update',
-    '/2/delete',
-    '/2/like',
+    '/3/update',
+    '/3/delete',
+    '/3/like',
     '/delete_comment/2',
 ))
 def test_exists_required(client, auth, path):
@@ -62,12 +69,12 @@ def test_exists_required(client, auth, path):
 def test_create(client, auth, app):
     auth.login()
     assert client.get('/create').status_code == 200
-    client.post('/create', data={'title': 'created', 'body': ''})
+    client.post('/create', data={'title': 'created', 'body': '', 'tags': ''})
 
     with app.app_context():
         db = get_db()
         count = db.execute('SELECT COUNT(id) FROM post').fetchone()[0]
-        assert count == 2
+        assert count == 3
 
 
 def test_read(client, auth):
@@ -77,6 +84,7 @@ def test_read(client, auth):
     assert b'test\nbody' in response.data
     assert '🤍&nbsp;1' in response.data.decode('utf-8')
     assert b'1 comments' in response.data
+    assert b'test_tag' in response.data
 
     auth.login()
     response = client.get('/1')
@@ -88,7 +96,10 @@ def test_read(client, auth):
 def test_update(client, auth, app):
     auth.login()
     assert client.get('/1/update').status_code == 200
-    client.post('/1/update', data={'title': 'updated', 'body': ''})
+    response = client.post(
+        '/1/update', data={'title': 'updated', 'body': '', 'tags': ''}
+    )
+    assert response.headers['Location'] == '/1'
 
     with app.app_context():
         db = get_db()
@@ -102,7 +113,7 @@ def test_update(client, auth, app):
 ))
 def test_create_update_validate(client, auth, path):
     auth.login()
-    response = client.post(path, data={'title': '', 'body': ''})
+    response = client.post(path, data={'title': '', 'body': '', 'tags': ''})
     assert b'Title is required.' in response.data
 
 
