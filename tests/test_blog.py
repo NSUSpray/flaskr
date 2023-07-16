@@ -8,6 +8,7 @@ def test_index(client, auth):
     assert b'Register' in response.data
     assert '🤍&nbsp;1' in response.data.decode('utf-8')
     assert '💬&nbsp;1' in response.data.decode('utf-8')
+    assert b'Search' in response.data
 
     auth.login()
     response = client.get('/')
@@ -22,6 +23,16 @@ def test_index(client, auth):
 def test_show_tagged(client):
     response = client.get('/tag/test_tag')
     assert 'with tag “test_tag”' in response.data.decode('utf-8')
+    assert b'test title 1' in response.data
+    assert b'test title 2' not in response.data
+
+
+def test_search(client):
+    response = client.get('/?search=title')
+    assert 'for “title”' in response.data.decode('utf-8')
+    assert b'test title 1' in response.data
+    assert b'test title 2' in response.data
+    response = client.get('/?search=title 1')
     assert b'test title 1' in response.data
     assert b'test title 2' not in response.data
 
@@ -139,8 +150,7 @@ def test_like(client, auth, app):
         with app.app_context():
             db = get_db()
             count = db.execute('''
-                SELECT COUNT(*)
-                FROM reaction
+                SELECT COUNT(*) FROM reaction
                 WHERE post_id = 1 AND user_id = 1'''
             ).fetchone()[0]
         return count
