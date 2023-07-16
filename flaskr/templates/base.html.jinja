@@ -2,19 +2,26 @@
   {% set reacted = g.user and g.user['id'] in ids %}
   {{ ('💙' if reacted else '🤍') + '&nbsp;' + ids|length|string }}
 {% endmacro %}
+
 {% macro comments_block(ids) %}
   {{ '💬&nbsp;' + ids|length|string }}
 {% endmacro %}
+
 {% macro tags_block(tags) %}
   {% for tag in tags %}
     <a href="{{ url_for('blog.index', tag=tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
   {% endfor %}
 {% endmacro %}
+
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <nav>
   <h1><a href="{{ url_for('blog.index') }}">Flaskr</a></h1>
+  <form action="{{ url_for('blog.index') }}">
+    <input type="submit" value="🔎" />
+    <input name="search" placeholder="Search" />
+  </form>
   <ul>
     {% if g.user %}
       <li><span>{{ g.user['username'] }}</span>

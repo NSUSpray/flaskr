@@ -13,19 +13,28 @@ bp = Blueprint('blog', __name__)
 @bp.route('/')
 @bp.route('/tag/<tag>')
 def index(tag=None):
+    search = request.args.get('search')
     db = get_db()
     posts = db.execute('''
         SELECT p.id, title, body, created, author_id, username
         FROM post p JOIN user u ON p.author_id = u.id
         WHERE " " || tags || " " LIKE ?
+        AND title LIKE ?
         ORDER BY created DESC''',
-        (f'% {tag} %' if tag else '%',)
+        (
+            f'% {tag} %' if tag else '%',
+            f'%{search}%' if search else '%',
+        )
     ).fetchall()
     reactions = [get_reactions(post['id']) for post in posts]
     comments = [get_comments(post['id']) for post in posts]
     return render_template(
         'blog/index.html.jinja',
-        posts=posts, reactions=reactions, comments=comments, tag=tag
+        posts=posts,
+        reactions=reactions,
+        comments=comments,
+        tag=tag,
+        search=search,
     )
 
 

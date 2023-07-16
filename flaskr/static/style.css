@@ -30,7 +30,8 @@ input.danger { color: #cc2f2e; }
 input[type=submit] { align-self: start; min-width: 10em; }
 .details { display: flex; }
 .reactions input[type=submit],
-		.comments input[type=submit]
+		.comments input[type=submit],
+		nav input[type=submit]
 	{ min-width: auto; }
 .reactions + * { margin-left: 1em !important; }
 .tags { margin: 1em 0; }
