@@ -1,3 +1,5 @@
+from math import floor
+
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
@@ -14,20 +16,41 @@ bp = Blueprint('blog', __name__)
 @bp.route('/tag/<tag>')
 def index(tag=None):
     search = request.args.get('search')
+    try:
+        start = int(request.args.get('start'))
+    except (ValueError, TypeError):
+        start = 0
+    else:
+        start = max(start, 0)
+    posts_per_page = 5
+
     db = get_db()
-    posts = db.execute('''
-        SELECT p.id, title, body, created, author_id, username
-        FROM post p JOIN user u ON p.author_id = u.id
+    where_order_request = '''
         WHERE " " || tags || " " LIKE ?
         AND title LIKE ?
-        ORDER BY created DESC''',
-        (
-            f'% {tag} %' if tag else '%',
-            f'%{search}%' if search else '%',
-        )
+        ORDER BY created DESC
+    '''
+    where_values = (
+        f'% {tag} %' if tag else '%',
+        f'%{search}%' if search else '%',
+    )
+    posts = db.execute('''
+        SELECT p.id, title, body, created, author_id, username
+        FROM post p JOIN user u ON p.author_id = u.id'''
+        + where_order_request + 'LIMIT ? OFFSET ?',
+        where_values + (posts_per_page, start),
     ).fetchall()
+    last = db.execute(
+        'SELECT COUNT(*) AS c FROM post' + where_order_request,
+        where_values,
+    ).fetchone()['c'] - 1
+
     reactions = [get_reactions(post['id']) for post in posts]
     comments = [get_comments(post['id']) for post in posts]
+    prv = max(start - posts_per_page, 0) if start > 0 else None
+    nxt = start + posts_per_page if start + posts_per_page <= last else None
+    current_page = floor((start - 1) / posts_per_page) + 2
+
     return render_template(
         'blog/index.html.jinja',
         posts=posts,
@@ -35,6 +58,9 @@ def index(tag=None):
         comments=comments,
         tag=tag,
         search=search,
+        prev=prv,
+        current_page=current_page,
+        next=nxt,
     )
 
 

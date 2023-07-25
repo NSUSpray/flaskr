@@ -22,8 +22,16 @@
       <p class="body">{{ post['body']|truncate(80, False, '…') }}</p>
       <div>{{ reactions_block(reactions[loop.index - 1]) }} {{ comments_block(comments[loop.index - 1]) }}</div>
     </article>
-    {% if not loop.last %}
-      <hr>
-    {% endif %}
+    <hr>
   {% endfor %}
+  <div id="page">
+  Pages:
+  {% if prev or prev == 0 %}
+    <a href="{{ url_for('blog.index', tag=tag, search=search, start=prev) }}" title="Previous page">&lt;</a>
+  {% endif %}
+  <span>{{ current_page }}</span>
+  {% if next %}
+    <a href="{{ url_for('blog.index', tag=tag, search=search, start=next) }}" title="Next page">&gt;</a>
+  {% endif %}
+  </div>
 {% endblock %}

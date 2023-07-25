@@ -35,3 +35,11 @@ input[type=submit] { align-self: start; min-width: 10em; }
 	{ min-width: auto; }
 .reactions + * { margin-left: 1em !important; }
 .tags { margin: 1em 0; }
+#page { margin: 1em 0 0 0; }
+#page a, #page span {
+	display: inline-block;
+	padding: 0 0.5ex;
+	border: 1px solid lightgray;
+	text-decoration: none;
+	color: #000;
+}
