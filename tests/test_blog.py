@@ -9,6 +9,7 @@ def test_index(client, auth):
     assert '🤍&nbsp;1' in response.data.decode('utf-8')
     assert '💬&nbsp;1' in response.data.decode('utf-8')
     assert b'Search' in response.data
+    assert b'Pages:' in response.data
 
     auth.login()
     response = client.get('/')
@@ -67,9 +68,9 @@ def test_author_required(app, client, auth):
 
 
 @pytest.mark.parametrize('path', (
-    '/3/update',
-    '/3/delete',
-    '/3/like',
+    '/8/update',
+    '/8/delete',
+    '/8/like',
     '/delete_comment/2',
 ))
 def test_exists_required(client, auth, path):
@@ -85,7 +86,7 @@ def test_create(client, auth, app):
     with app.app_context():
         db = get_db()
         count = db.execute('SELECT COUNT(id) FROM post').fetchone()[0]
-        assert count == 3
+        assert count == 8
 
 
 def test_read(client, auth):
@@ -182,3 +183,20 @@ def test_delete_comment(client, auth, app):
         db = get_db()
         comment = db.execute('SELECT * FROM comment WHERE id = 1').fetchone()
         assert comment is None
+
+
+def test_pages(client):
+    response = client.get('/')
+    assert b'title="Previous page"' not in response.data
+    assert b'<span>1</span>' in response.data
+    assert b'href="/?start=5"' in response.data
+
+    response = client.get('/?start=5')
+    assert b'href="/?start=0"' in response.data
+    assert b'<span>2</span>' in response.data
+    assert b'title="Next page"' not in response.data
+
+    response = client.get('/?start=1')
+    assert b'href="/?start=0"' in response.data
+    assert b'<span>2</span>' in response.data
+    assert b'href="/?start=6"' in response.data

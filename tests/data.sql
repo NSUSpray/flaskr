@@ -6,7 +6,12 @@ VALUES
 INSERT INTO post (title, body, tags, author_id, created)
 VALUES
   ('test title 1', 'test' || x'0a' || 'body', 'test_tag', 1, '2018-01-01 00:00:00'),
-  ('test title 2', 'test' || x'0a' || 'body', '', 1, '2018-01-01 00:00:00');
+  ('test title 2', 'test' || x'0a' || 'body', '', 1, '2018-01-01 00:00:00'),
+  ('3', 'c', 't3', 1, '2018-01-01 00:00:00'),
+  ('4', 'd', 't4', 1, '2018-01-01 00:00:00'),
+  ('5', 'e', 't5', 1, '2018-01-01 00:00:00'),
+  ('6', 'f', 't6', 1, '2018-01-01 00:00:00'),
+  ('7', 'g', 't7', 1, '2018-01-01 00:00:00');
 
 INSERT INTO reaction (post_id, user_id) VALUES (1, 1);
 
