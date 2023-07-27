@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from flaskr.db import get_db
 
@@ -92,6 +94,15 @@ def test_create(client, auth, app, jpeg_file):
         count = db.execute('SELECT COUNT(id) FROM post').fetchone()[0]
         assert count == 8
 
+    assert Path(app.config['POST_IMAGE_FOLDER'], '8.jpg').exists()
+
+    client.post(
+        '/create',
+        data={'title': 'created', 'body': '', 'tags': '', 'image': (None, '')},
+        content_type='multipart/form-data',
+    )
+    assert not Path(app.config['POST_IMAGE_FOLDER'], '9.jpg').exists()
+
 
 def test_read(client, auth):
     response = client.get('/1')
@@ -101,12 +112,16 @@ def test_read(client, auth):
     assert '🤍&nbsp;1' in response.data.decode('utf-8')
     assert b'1 comments' in response.data
     assert b'test_tag' in response.data
+    assert b'src="/1/image.gif"' in response.data
+    response = client.get('/1/image.gif')
+    assert response.data[:5] == b'GIF89'
 
     auth.login()
-    response = client.get('/1')
-    assert b'href="/1/update"' in response.data
-    assert b'action="/1/like"' in response.data
+    response = client.get('/2')
+    assert b'href="/2/update"' in response.data
+    assert b'action="/2/like"' in response.data
     assert '💙&nbsp;1' in response.data.decode('utf-8')
+    assert b'src="/2/image.gif"' not in response.data
 
 
 def test_update(client, auth, app, jpeg_file):
@@ -114,7 +129,7 @@ def test_update(client, auth, app, jpeg_file):
     assert client.get('/1/update').status_code == 200
     response = client.post(
         '/1/update',
-        data={'title': 'updated', 'body': '', 'tags': '', 'image': jpeg_file},
+        data={'title': 'updated', 'body': '', 'tags': '', 'image': (None, '')},
         content_type='multipart/form-data',
     )
     assert response.headers['Location'] == '/1'
@@ -123,6 +138,16 @@ def test_update(client, auth, app, jpeg_file):
         db = get_db()
         post = db.execute('SELECT * FROM post WHERE id = 1').fetchone()
         assert post['title'] == 'updated'
+
+    assert not Path(app.config['POST_IMAGE_FOLDER'], '1.jpg').exists()
+
+    response = client.post(
+        '/1/update',
+        data={'title': 'updated', 'body': '', 'tags': '', 'image': jpeg_file},
+        content_type='multipart/form-data',
+    )
+
+    assert Path(app.config['POST_IMAGE_FOLDER'], '1.jpg').exists()
 
 
 @pytest.mark.parametrize('path', (
@@ -137,6 +162,20 @@ def test_create_update_validate(client, auth, jpeg_file, path):
         content_type='multipart/form-data',
     )
     assert b'Title is required.' in response.data
+
+    response = client.post(
+        path,
+        data={'title': 'test', 'body': '', 'tags': '', 'image': (0, '0.txt')},
+        content_type='multipart/form-data',
+    )
+    assert b'Invalid image file type.' in response.data
+
+    response = client.post(
+        path,
+        data={'title': 'test', 'body': '', 'tags': ''},
+        content_type='multipart/form-data',
+    )
+    assert b'No file part.' in response.data
 
 
 def test_comment_validate(client, auth):
@@ -154,6 +193,8 @@ def test_delete(client, auth, app):
         db = get_db()
         post = db.execute('SELECT * FROM post WHERE id = 1').fetchone()
         assert post is None
+
+    assert not Path(app.config['POST_IMAGE_FOLDER'], '1.jpg').exists()
 
 
 def test_like(client, auth, app):
