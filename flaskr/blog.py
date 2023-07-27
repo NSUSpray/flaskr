@@ -1,13 +1,19 @@
 from math import floor
+from pathlib import Path
+import glob
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for,
+    current_app, send_from_directory
 )
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
 from flaskr.db import get_db
 
+
+POSTS_PER_PAGE = 5
+ALLOWED_EXTENSIONS = {'.jpe', '.jpg', '.jpeg', '.gif', '.png', '.bmp', '.webp'}
 
 bp = Blueprint('blog', __name__)
 
@@ -22,7 +28,6 @@ def index(tag=None):
         start = 0
     else:
         start = max(start, 0)
-    posts_per_page = 5
 
     db = get_db()
     where_order_request = '''
@@ -38,7 +43,7 @@ def index(tag=None):
         SELECT p.id, title, body, created, author_id, username
         FROM post p JOIN user u ON p.author_id = u.id'''
         + where_order_request + 'LIMIT ? OFFSET ?',
-        where_values + (posts_per_page, start),
+        where_values + (POSTS_PER_PAGE, start),
     ).fetchall()
     last = db.execute(
         'SELECT COUNT(*) AS c FROM post' + where_order_request,
@@ -47,9 +52,9 @@ def index(tag=None):
 
     reactions = [get_reactions(post['id']) for post in posts]
     comments = [get_comments(post['id']) for post in posts]
-    prv = max(start - posts_per_page, 0) if start > 0 else None
-    nxt = start + posts_per_page if start + posts_per_page <= last else None
-    current_page = floor((start - 1) / posts_per_page) + 2
+    prv = max(start - POSTS_PER_PAGE, 0) if start > 0 else None
+    nxt = start + POSTS_PER_PAGE if start + POSTS_PER_PAGE <= last else None
+    current_page = floor((start - 1) / POSTS_PER_PAGE) + 2
 
     return render_template(
         'blog/index.html.jinja',
@@ -68,6 +73,33 @@ def make_tag_list(tags_string):
     return [tag for tag in tags_string.split(' ') if tag]
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
+
+
+def image_path(id, orig_filename=None):
+    root_dir = Path(
+        current_app.instance_path,
+        current_app.config['POST_IMAGE_FOLDER']
+    )
+    if orig_filename:
+        return Path(root_dir, str(id)).with_suffix(Path(orig_filename).suffix)
+    else:
+        paths = glob.glob(f'{id}*', root_dir=root_dir)
+        if paths:
+            return Path(current_app.config['POST_IMAGE_FOLDER'], paths[0])
+
+
+def remove_images(id):
+    root_dir = Path(
+        current_app.instance_path,
+        current_app.config['POST_IMAGE_FOLDER']
+    )
+    for path in glob.glob(f'{id}*', root_dir=root_dir):
+        Path(root_dir, path).unlink()
+
+
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
@@ -79,6 +111,12 @@ def create():
 
         if not title:
             error = 'Title is required.'
+        elif 'image' not in request.files:
+            error = 'No file part.'
+        else:
+            file = request.files['image']
+            if file.filename and file and not allowed_file(file.filename):
+                error = 'Invalid image file type.'
 
         if error is not None:
             flash(error)
@@ -91,6 +129,9 @@ def create():
             )
             db.commit()
             id = db.execute('SELECT LAST_INSERT_ROWID() id').fetchone()['id']
+            if file.filename:
+                path = image_path(id, file.filename)
+                file.save(path)
             return redirect(url_for('blog.read', id=str(id)))
 
     return render_template('blog/create.html.jinja')
@@ -155,9 +196,12 @@ def read(id):
     reactions = get_reactions(id)
     comments = get_comments(id)
     tags = make_tag_list(post['tags'])
+    path = image_path(id)
+    ext = path and path.suffix
     return render_template(
         'blog/read.html.jinja',
-        post=post, reactions=reactions, comments=comments, tags=tags
+        post=post, reactions=reactions, comments=comments, tags=tags,
+        image_ext=ext,
     )
 
 
@@ -174,6 +218,12 @@ def update(id):
 
         if not title:
             error = 'Title is required.'
+        elif 'image' not in request.files:
+            error = 'No file part.'
+        else:
+            file = request.files['image']
+            if file.filename and file and not allowed_file(file.filename):
+                error = 'Invalid image file type.'
 
         if error is not None:
             flash(error)
@@ -185,6 +235,10 @@ def update(id):
                 (title, body, ' '.join(tags), id)
             )
             db.commit()
+            remove_images(id)
+            if file.filename:
+                path = image_path(id, file.filename)
+                file.save(path)
             return redirect(url_for('blog.read', id=id))
 
     return render_template('blog/update.html.jinja', post=post)
@@ -197,6 +251,7 @@ def delete(id):
     db = get_db()
     db.execute('DELETE FROM post WHERE id = ?', (id,))
     db.commit()
+    remove_images(id)
     return redirect(url_for('blog.index'))
 
 
@@ -252,3 +307,12 @@ def delete_comment(id):
     db.execute('DELETE FROM comment WHERE id = ?', (id,))
     db.commit()
     return redirect(url_for('blog.read', id=comment['post_id']))
+
+
+@bp.route('/<id>/image<ext>')
+def get_image(id, ext):
+    root_dir = Path(
+        current_app.instance_path,
+        current_app.config['POST_IMAGE_FOLDER']
+    )
+    return send_from_directory(root_dir, f'{id}{ext}')

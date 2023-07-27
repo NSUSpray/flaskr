@@ -1,5 +1,7 @@
 import os
+import shutil
 import tempfile
+import io
 
 import pytest
 from flaskr import create_app
@@ -12,10 +14,12 @@ with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
 @pytest.fixture
 def app():
     db_fd, db_path = tempfile.mkstemp()
+    post_image_path = tempfile.mkdtemp()
 
     app = create_app({
         'TESTING': True,
         'DATABASE': db_path,
+        'POST_IMAGE_FOLDER': post_image_path,
     })
 
     with app.app_context():
@@ -26,6 +30,7 @@ def app():
 
     os.close(db_fd)
     os.unlink(db_path)
+    shutil.rmtree(post_image_path)
 
 
 @pytest.fixture
@@ -55,3 +60,8 @@ class AuthActions:
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
+
+
+@pytest.fixture
+def jpeg_file():
+    return (io.BytesIO(b"abcdef"), 'test.jpg')

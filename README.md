@@ -8,7 +8,7 @@ Solved [exercises](https://flask.palletsprojects.com/tutorial/next/) for the bas
 - [x] Tags. Clicking a tag shows all the posts with that tag.
 - [x] A search box that filters the index page by name.
 - [x] Paged display. Only show 5 posts per page.
-- [ ] Upload an image to go along with a post.
+- [x] Upload an image to go along with a post.
 - [ ] Format posts using Markdown.
 - [ ] An RSS feed of new posts.
 

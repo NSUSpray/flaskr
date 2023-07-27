@@ -1,13 +1,15 @@
 {% extends 'base.html.jinja' %}
 
 {% block content %}
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     <label for="title">Title</label>
     <input name="title" id="title" value="{{ request.form['title'] or post and post['title'] }}" required>
     <label for="body">Body</label>
     <textarea name="body" id="body">{{ request.form['body'] or post and post['body'] }}</textarea>
     <label for="tags">Tags</label>
     <input name="tags" id="tags" value="{{ request.form['tags'] or post and post['tags'] }}">
+    <label for="image">Image</label>
+    <input type="file" name="image" id="image" accept="image/*">
     <input type="submit" value="Save">
   </form>
 {% endblock %}

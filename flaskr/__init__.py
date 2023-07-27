@@ -9,6 +9,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+        POST_IMAGE_FOLDER='post_images',
     )
 
     if test_config is None:
@@ -21,6 +22,12 @@ def create_app(test_config=None):
     # ensure the instance folder exists
     try:
         os.makedirs(app.instance_path)
+    except OSError:
+        pass
+    try:
+        os.makedirs(
+            os.path.join(app.instance_path, app.config['POST_IMAGE_FOLDER'])
+        )
     except OSError:
         pass
 

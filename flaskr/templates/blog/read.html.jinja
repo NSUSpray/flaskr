@@ -16,6 +16,9 @@
       {% endif %}
     </header>
     <p class="body">{{ post['body'] }}</p>
+    {% if image_ext %}
+      <p><img alt="Post image" src="{{ url_for('blog.get_image', id=post['id'], ext=image_ext) }}" /></p>
+    {% endif %}
     <div class="details">
     {% if g.user %}
       <form class="reactions" action="{{ url_for('blog.like', id=post['id']) }}" method="post">

@@ -78,10 +78,14 @@ def test_exists_required(client, auth, path):
     assert client.post(path).status_code == 404
 
 
-def test_create(client, auth, app):
+def test_create(client, auth, app, jpeg_file):
     auth.login()
     assert client.get('/create').status_code == 200
-    client.post('/create', data={'title': 'created', 'body': '', 'tags': ''})
+    client.post(
+        '/create',
+        data={'title': 'created', 'body': '', 'tags': '', 'image': jpeg_file},
+        content_type='multipart/form-data',
+    )
 
     with app.app_context():
         db = get_db()
@@ -105,11 +109,13 @@ def test_read(client, auth):
     assert '💙&nbsp;1' in response.data.decode('utf-8')
 
 
-def test_update(client, auth, app):
+def test_update(client, auth, app, jpeg_file):
     auth.login()
     assert client.get('/1/update').status_code == 200
     response = client.post(
-        '/1/update', data={'title': 'updated', 'body': '', 'tags': ''}
+        '/1/update',
+        data={'title': 'updated', 'body': '', 'tags': '', 'image': jpeg_file},
+        content_type='multipart/form-data',
     )
     assert response.headers['Location'] == '/1'
 
@@ -123,9 +129,13 @@ def test_update(client, auth, app):
     '/create',
     '/1/update',
 ))
-def test_create_update_validate(client, auth, path):
+def test_create_update_validate(client, auth, jpeg_file, path):
     auth.login()
-    response = client.post(path, data={'title': '', 'body': '', 'tags': ''})
+    response = client.post(
+        path,
+        data={'title': '', 'body': '', 'tags': '', 'image': jpeg_file},
+        content_type='multipart/form-data',
+    )
     assert b'Title is required.' in response.data
 
 
