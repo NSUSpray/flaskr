@@ -15,7 +15,7 @@
         <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
       {% endif %}
     </header>
-    <p class="body">{{ post['body'] }}</p>
+    {{ post['body']|markdown }}
     {% if image_ext %}
       <p><img alt="Post image" src="{{ url_for('blog.get_image', id=post['id'], ext=image_ext) }}" /></p>
     {% endif %}
@@ -36,7 +36,7 @@
         <input type="submit" value="Leave Comment">
       </form>
     {% endif %}
-    <h1>{{ comments|length }} comments</h1>
+    <h3>{{ comments|length }} comments</h3>
     {% for comment in comments %}
       <article>
       <div>

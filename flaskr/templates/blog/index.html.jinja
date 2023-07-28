@@ -19,7 +19,7 @@
           <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
         {% endif %}
       </header>
-      <p class="body">{{ post['body']|truncate(80, False, '…') }}</p>
+      <p class="body">{{ post['body']|markdown|striptags|truncate(80, False, '…') }}</p>
       <div>{{ reactions_block(reactions[loop.index - 1]) }} {{ comments_block(comments[loop.index - 1]) }}</div>
     </article>
     <hr>

@@ -9,7 +9,7 @@ Solved [exercises](https://flask.palletsprojects.com/tutorial/next/) for the bas
 - [x] A search box that filters the index page by name.
 - [x] Paged display. Only show 5 posts per page.
 - [x] Upload an image to go along with a post.
-- [ ] Format posts using Markdown.
+- [x] Format posts using Markdown.
 - [ ] An RSS feed of new posts.
 
 

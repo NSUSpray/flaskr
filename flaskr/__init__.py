@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flaskext.markdown import Markdown
 
 
 def create_app(test_config=None):
@@ -44,5 +45,7 @@ def create_app(test_config=None):
     app.register_blueprint(blog.bp)
     
     app.add_url_rule('/', endpoint='index')
+
+    Markdown(app)
 
     return app
