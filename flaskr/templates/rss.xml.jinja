@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+
+<channel>
+<title>Flaskr</title>
+<link>https://localhost:5000/</link>
+<description>The basic blog app built in the Flask tutorial.</description>
+
+{% for post in posts %}
+  <item>
+  <title>{{ post['title'] }}</title>
+  <link>https://localhost:5000{{ url_for('blog.read', id=post['id']) }}</link>
+  <description>{{ post['body']|markdown|striptags }}</description>
+  <pubDate>{{ post['created'] }}</pubDate>
+  <guid>{{ post['id'] }}</guid>
+  </item>
+{% endfor %}
+</channel>
+</rss>

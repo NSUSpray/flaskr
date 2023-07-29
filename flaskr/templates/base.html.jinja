@@ -16,6 +16,7 @@
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="alternate" type="application/rss+xml" title="Flaskr - RSS feed" href="rss.xml">
 <nav>
   <h1><a href="{{ url_for('blog.index') }}">Flaskr</a></h1>
   <form action="{{ url_for('blog.index') }}">
@@ -30,6 +31,9 @@
       <li><a href="{{ url_for('auth.register') }}">Register</a>
       <li><a href="{{ url_for('auth.login') }}">Log In</a>
     {% endif %}
+    <li><a href="rss.xml">
+      <img src="https://www.rssboard.org/images/rss-icon.png" title="RSS feed" alt="RSS feed">
+    </a></li>
   </ul>
 </nav>
 <section class="content">

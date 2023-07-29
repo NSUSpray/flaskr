@@ -4,7 +4,7 @@ import glob
 
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for,
-    current_app, send_from_directory
+    current_app, send_from_directory, Response
 )
 from werkzeug.exceptions import abort
 
@@ -316,3 +316,18 @@ def get_image(id, ext):
         current_app.config['POST_IMAGE_FOLDER']
     )
     return send_from_directory(root_dir, f'{id}{ext}')
+
+
+@bp.route('/rss.xml')
+def get_rss():
+    db = get_db()
+    posts = db.execute('''
+        SELECT id, title, body, created
+        FROM post
+        ORDER BY created DESC
+        LIMIT 20''',
+    ).fetchall()
+    return Response(
+        render_template('rss.xml.jinja', posts=posts),
+        mimetype='application/rss+xml',
+    )
