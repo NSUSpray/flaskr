@@ -18,7 +18,7 @@ def test_index(client, auth):
     assert b'Log Out' in response.data
     assert b'test title' in response.data
     assert b'by test on 2018-01-01' in response.data
-    assert b'test body' in response.data
+    assert b'test** body' in response.data
     assert b'href="/1/update"' in response.data
     assert '💙&nbsp;1' in response.data.decode('utf-8')
 
@@ -108,7 +108,7 @@ def test_read(client, auth):
     response = client.get('/1')
     assert b'test title' in response.data
     assert b'by test on 2018-01-01' in response.data
-    assert b'test\nbody' in response.data
+    assert b'<p><em>test</em>**</p>\n<h1>body</h1>' in response.data
     assert '🤍&nbsp;1' in response.data.decode('utf-8')
     assert b'1 comments' in response.data
     assert b'test_tag' in response.data

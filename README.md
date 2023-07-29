@@ -41,14 +41,6 @@ Install Flaskr
 $ pip install -e .
 ```
 
-Or if you are using the main branch, install Flask from source before
-installing Flaskr
-
-```shell
-$ pip install -e ../..
-$ pip install -e .
-```
-
 
 ## Run
 
