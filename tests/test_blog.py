@@ -1,4 +1,6 @@
 from pathlib import Path
+from contextlib import nullcontext as does_not_raise
+from xml.etree import ElementTree as ET
 
 import pytest
 from flaskr.db import get_db
@@ -251,3 +253,12 @@ def test_pages(client):
     assert b'href="/?start=0"' in response.data
     assert b'<span>2</span>' in response.data
     assert b'href="/?start=6"' in response.data
+
+
+def test_rss(client):
+    response = client.get('/rss.xml')
+    with does_not_raise():
+        ET.fromstring(response.data)
+    assert b'<title>test title 1</title>' in response.data
+    assert b'<pubDate>2018-01-01' in response.data
+    assert b'<description>test** body</description>' in response.data
